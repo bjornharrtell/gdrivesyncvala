@@ -1,15 +1,12 @@
 using Gtk;
 using WebKit;
 
-class TokenInfo : GLib.Object {
-    public string access_token;
-    public int64 expires_in;
-    public string refresh_token;
-}
+using GDriveSync.AuthInfo;
 
-class Auth : GLib.Object {
+namespace GDriveSync.Auth {
     
-    public TokenInfo getTokenInfo(string[] args) {
+    public void authenticate() {
+        unowned string[] args = null;
         Gtk.init(ref args);
 		
 		var window = new Gtk.Window (Gtk.WindowType.TOPLEVEL);
@@ -24,8 +21,6 @@ class Auth : GLib.Object {
         
         var uri = "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=783554179767.apps.googleusercontent.com&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=https://www.googleapis.com/auth/drive";
 		
-		TokenInfo tokenInfo = null;
-		
 		webView.load_finished.connect( (webView, load_event) => {
             var title = webView.get_title();
             if (title != null) {
@@ -33,7 +28,7 @@ class Auth : GLib.Object {
                 if (split.length == 2 && split[0] == "Success code") {
                     var code = split[1];
                     window.close();
-                    tokenInfo = requestToken(code);
+                    requestToken(code);
                 }
             }
         });
@@ -44,11 +39,9 @@ class Auth : GLib.Object {
         webView.load_uri(uri);
 		
         Gtk.main();
-        
-        return tokenInfo;
     }
     
-    TokenInfo requestToken(string code) {
+    void requestToken(string code) {
         var session = new Soup.Session();
     
         var params = @"code=$(code)&";
@@ -65,16 +58,9 @@ class Auth : GLib.Object {
         parser.load_from_data (data, -1);
         var root_object = parser.get_root().get_object();
         
-        var access_token = root_object.get_string_member("access_token");
-        var expires_in = root_object.get_int_member("expires_in");
-        var refresh_token = root_object.get_string_member("refresh_token");
-        
-        var tokenInfo = new TokenInfo();
-        tokenInfo.access_token = access_token;
-        tokenInfo.expires_in = expires_in;
-        tokenInfo.refresh_token = refresh_token;
-        
-        return tokenInfo;
+        access_token = root_object.get_string_member("access_token");
+        expires_in = (int)root_object.get_int_member("expires_in");
+        refresh_token = root_object.get_string_member("refresh_token");
     }
 
 }

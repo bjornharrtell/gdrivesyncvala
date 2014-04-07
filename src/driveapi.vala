@@ -1,6 +1,8 @@
 using Json;
 using Gee;
 
+using GDriveSync.AuthInfo;
+
 class Entry : GLib.Object {
     public string id;
     public string title;
@@ -10,7 +12,7 @@ class Entry : GLib.Object {
 
 class DriveAPI : GLib.Object {
 
-    public static void getFiles(string access_token) {
+    public static void getFiles() {
         var session = new Soup.Session();
         
         var message = new Soup.Message("GET", @"https://www.googleapis.com/drive/v2/files?access_token=$(access_token)");
@@ -18,10 +20,15 @@ class DriveAPI : GLib.Object {
         session.send_message(message);
         
         var data = (string) message.response_body.flatten().data;
+
+		debug("Got response from Google Drive API");
+		debug(data);
+		
         var parser = new Json.Parser();
         parser.load_from_data (data, -1);
         var root_object = parser.get_root().get_object();
-        
+
+		
         var map = new HashMap<string, Entry>();
         
         var items = root_object.get_array_member("items");
