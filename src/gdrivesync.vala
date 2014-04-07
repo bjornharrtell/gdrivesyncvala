@@ -7,8 +7,10 @@ namespace GDriveSync {
         public static int main(string[] args) {
 
             Auth.authenticate();
+
+            var api = new DriveAPI();
             
-            DriveAPI.getFiles();
+            api.getFiles();
 
             return 0;
         } 
