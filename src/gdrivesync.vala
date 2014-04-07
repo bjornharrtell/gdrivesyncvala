@@ -6,14 +6,9 @@ namespace GDriveSync {
 
         public static int main(string[] args) {
 
-            if (access_token == null) {
-			    debug("No previous access token found, will try to get authorization.");
-                Auth.authenticate();
-                DriveAPI.getFiles();
-            } else {
-			    debug("Access token %s found.", access_token);
-                DriveAPI.getFiles();
-            }
+            Auth.authenticate();
+            
+            DriveAPI.getFiles();
 
             return 0;
         } 
