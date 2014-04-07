@@ -83,7 +83,7 @@ DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
 	$(srcdir)/config.h.in $(dist_doc_DATA) COPYING config.guess \
-	config.sub install-sh missing ltmain.sh
+	config.sub depcomp install-sh missing ltmain.sh
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -222,13 +222,13 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /home/bjorn/code/gdrivesync/missing aclocal-1.13
+ACLOCAL = ${SHELL} /home/bjorn/code/gdrivesync2/missing aclocal-1.13
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
-AUTOCONF = ${SHELL} /home/bjorn/code/gdrivesync/missing autoconf
-AUTOHEADER = ${SHELL} /home/bjorn/code/gdrivesync/missing autoheader
-AUTOMAKE = ${SHELL} /home/bjorn/code/gdrivesync/missing automake-1.13
+AUTOCONF = ${SHELL} /home/bjorn/code/gdrivesync2/missing autoconf
+AUTOHEADER = ${SHELL} /home/bjorn/code/gdrivesync2/missing autoheader
+AUTOMAKE = ${SHELL} /home/bjorn/code/gdrivesync2/missing automake-1.13
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -263,7 +263,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/bjorn/code/gdrivesync/missing makeinfo
+MAKEINFO = ${SHELL} /home/bjorn/code/gdrivesync2/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -290,10 +290,10 @@ SHELL = /bin/bash
 STRIP = strip
 VALAC = /usr/bin/valac
 VERSION = 0.1
-abs_builddir = /home/bjorn/code/gdrivesync
-abs_srcdir = /home/bjorn/code/gdrivesync
-abs_top_builddir = /home/bjorn/code/gdrivesync
-abs_top_srcdir = /home/bjorn/code/gdrivesync
+abs_builddir = /home/bjorn/code/gdrivesync2
+abs_srcdir = /home/bjorn/code/gdrivesync2
+abs_top_builddir = /home/bjorn/code/gdrivesync2
+abs_top_srcdir = /home/bjorn/code/gdrivesync2
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_DUMPBIN = 
@@ -322,7 +322,7 @@ host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/bjorn/code/gdrivesync/install-sh
+install_sh = ${SHELL} /home/bjorn/code/gdrivesync2/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
