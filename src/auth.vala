@@ -70,7 +70,11 @@ namespace GDriveSync.Auth {
         session.send_message(message);
         var data = (string) message.response_body.flatten().data;
         var parser = new Json.Parser();
-        parser.load_from_data (data, -1);
+        try {
+            parser.load_from_data (data, -1);
+        } catch (Error e) {
+            critical(e.message);
+        }
         var object = parser.get_root().get_object();
         return object;
     }

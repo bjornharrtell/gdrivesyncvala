@@ -1,4 +1,3 @@
-using Json;
 using Gee;
 
 namespace GDriveSync {
@@ -10,21 +9,25 @@ namespace GDriveSync {
         public bool isFolder;
         public bool isParentRoot;
         public string path;
+        public Gee.List<Entry> children;
+        public string selfLink;
+        public string modifiedDate;
+        public string downloadUrl;
     }
 
     class DriveAPI : GLib.Object {
 
         Soup.Session session = new Soup.Session();
-        HashMap<string, Entry> map;
+        Map<string, Entry> map;
+        Map<string, Entry> folders;
 
         public DriveAPI() {
             session = new Soup.Session();
             map = new HashMap<string, Entry>();
+            folders = new HashMap<string, Entry>();
         }
         
         public void parseItems(string? nextLink = null) {
-
-            
             var link = nextLink != null ? nextLink : @"https://www.googleapis.com/drive/v2/files?maxResults=1000";
             link += @"&access_token=$(AuthInfo.access_token)";
 
@@ -38,7 +41,13 @@ namespace GDriveSync {
 		    debug(data);
             
             var parser = new Json.Parser();
-            parser.load_from_data (data, -1);
+
+            try {
+                parser.load_from_data (data, -1);
+            } catch (Error e) {
+                critical(e.message);
+            }
+            
             var root_object = parser.get_root().get_object();
             
             var items = root_object.get_array_member("items");
@@ -55,6 +64,9 @@ namespace GDriveSync {
                 entry.parentId = parent.get_string_member("id");
                 entry.isParentRoot = parent.get_boolean_member("isRoot");
                 entry.title = item2.get_string_member("title");
+                entry.selfLink = item2.get_string_member("selfLink");
+                entry.downloadUrl = item2.has_member("downloadUrl") ? item2.get_string_member("downloadUrl") : null;
+                entry.children = new ArrayList<Entry>();
                 var mimeType = item2.get_string_member("mimeType");
                 entry.isFolder = mimeType == "application/vnd.google-apps.folder";
                 map.set(entry.id, entry);
@@ -90,32 +102,69 @@ namespace GDriveSync {
 
             parseItems();
 
-            stdout.printf("Map size: %d", map.size);
+            stdout.printf("Map size: %d\n", map.size);
+
+            int count = 0;
             
-            // loop entries and recurse on parentId to calc path for all entires
             foreach (var entry in map.values) {
-                if (entry.isParentRoot) {
-                    entry.path = "/" + entry.title;
+                if (entry.isFolder) {
+                    folders.set(entry.id, entry);
+                    count++;
                 }
             }
 
-            do {
-                                
-            } while (parsePaths()>0);
+            stdout.printf("Folders: %d\n", count);
 
+            count = 0;
             foreach (var entry in map.values) {
-                if (entry.path != null) print(entry.path + "\n");
+                // TODO: find out why some parents does not exist in the main list
+                if (!folders.has_key(entry.parentId)) continue;
+                var parent = folders.get(entry.parentId);
+                parent.children.add(entry);
+                count++;
             }
+
+            stdout.printf("Children processed: %d\n", count);
+
+            foreach (var folder in folders.values) {
+                if (folder.isParentRoot) {
+                    processFolder(folder);
+                }
+            }
+        }
+
+        void processFolder(Entry folder, string root = "/") {
+            print("Processing folder: " + folder.title + "\n");
+
+            var newDir = File.new_for_path ("test" + root + folder.title);
+            try { newDir.make_directory(); } catch (Error e) {};
             
-            /*id
-            mimeType == "application/vnd.google-apps.folder"
-            title
-            selfLink
-            modifiedDate
+            foreach (var child in folder.children) {
+                var path = root + folder.title + "/";
+                if (child.isFolder) {
+                    processFolder(child, path);
+                } else if (child.downloadUrl != null) {
+                    download(child.downloadUrl, path + child.title);
+                }
+            }
+        }
+
+        void download(string url, string path) {
+            var url_auth = url + @"&access_token=$(AuthInfo.access_token)";
             
-            parents
-              id
-            */
+            var message = new Soup.Message("GET", url_auth);
+            session.send_message(message);
+            var data = message.response_body.flatten().data;
+
+            try {
+                var newFile = File.new_for_path ("test" + path);
+                var os = newFile.create(FileCreateFlags.PRIVATE);
+                size_t bytes_written;
+                os.write_all (data, out bytes_written);
+                os.close();
+            } catch (Error e) {
+                critical(e.message);
+            }
         }
     }
 
