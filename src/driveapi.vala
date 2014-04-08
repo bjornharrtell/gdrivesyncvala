@@ -83,6 +83,17 @@ namespace GDriveSync {
         
         public void getFiles() {
 
+
+            // TODO: rewrite to do this instead:
+            // 1. Use About resource to get root folder id
+            // 2. Write reusable logic that requests folders and files filtered by folder id and store in a tree structure
+            // 3. Recurse reusable logic on each folder found in the previous run
+
+            // Future stuff: 
+            // * populate tree structure with local information
+            // * use local information to decide if download is needed
+            // * use set diff on paths to find files not in Google Drive to be uploaded
+            
             parseItems();
 
             stdout.printf("Map size: %d\n", items.size);
