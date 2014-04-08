@@ -8,20 +8,20 @@ namespace GDriveSync.Auth {
     void doFullAuth() {
         unowned string[] args = null;
         Gtk.init(ref args);
-		
-		var window = new Gtk.Window (Gtk.WindowType.TOPLEVEL);
+
+        var window = new Gtk.Window (Gtk.WindowType.TOPLEVEL);
         window.set_default_size(400, 650);
         window.set_position(Gtk.WindowPosition.CENTER);
         window.title = "GDriveSync";
         window.destroy.connect(Gtk.main_quit);
-		
-		var webView = new WebView();
-		
+
+        var webView = new WebView();
+
         window.add(webView);
-        
+
         var uri = "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=783554179767.apps.googleusercontent.com&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=https://www.googleapis.com/auth/drive";
-		
-		webView.load_finished.connect( (webView, load_event) => {
+
+        webView.load_finished.connect( (webView, load_event) => {
             var title = webView.get_title();
             if (title != null) {
                 var split = title.split("=");
@@ -32,12 +32,12 @@ namespace GDriveSync.Auth {
                 }
             }
         });
-		
-		webView.show();
-		window.show();
-		
+
+        webView.show();
+        window.show();
+
         webView.load_uri(uri);
-		
+
         Gtk.main();
     }
 
@@ -78,18 +78,18 @@ namespace GDriveSync.Auth {
         var object = parser.get_root().get_object();
         return object;
     }
-    
+
     void requestToken(string code) {
         debug("Attempting get new access token from authorization code");
-        
+
         var params = @"code=$(code)&";
         params += "client_id=783554179767.apps.googleusercontent.com&";
         params += "client_secret=HjHKGUiLf7JySMttK-qQe62N&";
         params += "redirect_uri=urn:ietf:wg:oauth:2.0:oob&";
         params += "grant_type=authorization_code";
-        
+
         var object = request(params);
-        
+
         AuthInfo.access_token = object.get_string_member("access_token");
         AuthInfo.expires_in = object.get_int_member("expires_in");
         AuthInfo.refresh_token = object.get_string_member("refresh_token");
@@ -100,14 +100,14 @@ namespace GDriveSync.Auth {
 
     void refreshToken() {
         debug("Attempting to use refresh token to get new access token");
-        
+
         var params = "client_id=783554179767.apps.googleusercontent.com&";
         params += "client_secret=HjHKGUiLf7JySMttK-qQe62N&";
         params += @"refresh_token=$(AuthInfo.refresh_token)&";
         params += "grant_type=refresh_token";
-        
+
         var object = request(params);
-        
+
         AuthInfo.access_token = object.get_string_member("access_token");
         AuthInfo.expires_in = object.get_int_member("expires_in");
         AuthInfo.issued = new DateTime.now_local().to_unix();
