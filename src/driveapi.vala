@@ -2,22 +2,21 @@ using Gee;
 
 namespace GDriveSync {
 
-    
-
-    class DriveAPI : GLib.Object {
-
+    class DriveAPI : GLib.Object {     
+        
         class Item : GLib.Object {
             public string id;
-            public string parentId;
             public string title;
             public bool isFolder;
-            public bool isParentRoot;
             public string path;
-            public Gee.List<Item> children;
             public string downloadUrl;
-            public string modifiedDate;
-            public string fileSize;
-            public Item local;
+            //public string modifiedDate;
+            //public string fileSize;
+
+            //public string localModifiedDate;
+            //public string localFileSize;
+
+            public Gee.List<Item> children;
 
             public Item() {
                 children = new ArrayList<Item>();
@@ -25,136 +24,95 @@ namespace GDriveSync {
         }
         
         Soup.Session session = new Soup.Session();
-        Map<string, Item> items;
-        Map<string, Item> folders;
+        Json.Parser parser = new Json.Parser();
 
-        public DriveAPI() {
-            session = new Soup.Session();
-            items = new HashMap<string, Item>();
-            folders = new HashMap<string, Item>();
-        }
-        
-        public void parseItems(string? nextLink = null) {
-            var link = nextLink != null ? nextLink : @"https://www.googleapis.com/drive/v2/files?maxResults=1000&q=trashed%3Dfalse";
-            link += @"&access_token=$(AuthInfo.access_token)";
-
-            print(link + "\n");
-
-            var message = new Soup.Message("GET", link);
+        Json.Object requestJson(string url) {
+            var message = new Soup.Message("GET", url);
             session.send_message(message);
             var data = (string) message.response_body.flatten().data;
-
             debug("Got response from Google Drive API");
-		    debug(data);
-            
-            var parser = new Json.Parser();
-
+		    //debug(data + "\n");
             try {
                 parser.load_from_data (data, -1);
             } catch (Error e) {
                 critical(e.message);
             }
+            return parser.get_root().get_object();
+        }
+
+        void getItems(Item folder, string? nextLink = null) {
+            debug("Processing folder: " + folder.title);
+
+            var url = nextLink != null ? nextLink : @"https://www.googleapis.com/drive/v2/files?q=trashed+%3D+false+and+'$(folder.id)'+in+parents";
+            url += @"&access_token=$(AuthInfo.access_token)";
+            var json = requestJson(url);
+            var items = json.get_array_member("items");
             
-            var json = parser.get_root().get_object();
-            
-            var itemsNode = json.get_array_member("items");
-            
-            // parse json to entries
-            // ignore items with other than 1 parent
-            foreach (var element in json.get_array_member("items").get_elements()) {
-                var object = element.get_object();
+            foreach (var node in items.get_elements()) {
+                var object = node.get_object();
                 var item = new Item();
                 item.id = object.get_string_member("id");
                 var parents = object.get_array_member("parents");
+                // NOTE: ignore items with other than 1 parent
                 if (parents.get_length() != 1) continue;
-                var parent = parents.get_object_element(0);
-                item.parentId = parent.get_string_member("id");
-                item.isParentRoot = parent.get_boolean_member("isRoot");
                 item.title = object.get_string_member("title");
                 item.downloadUrl = object.has_member("downloadUrl") ? object.get_string_member("downloadUrl") : null;
                 var mimeType = object.get_string_member("mimeType");
                 item.isFolder = mimeType == "application/vnd.google-apps.folder";
-                items.set(item.id, item);
+                folder.children.add(item);
+                if (item.isFolder) getItems(item);
             }
         
             var next = json.has_member("nextLink") && !json.get_null_member("nextLink") ? json.get_string_member("nextLink") : null;
-            if (next != null) parseItems(next);
+            if (next != null) getItems(folder, next);
+        }
+
+        Item getRootFolder() {
+            var url = "https://www.googleapis.com/drive/v2/about?";
+            url += @"access_token=$(AuthInfo.access_token)";
+            var json = requestJson(url);
+            var rootFolderId = json.get_string_member("rootFolderId");
+            var rootFolder = new Item();
+            rootFolder.id = rootFolderId;
+            rootFolder.title = "Google Drive";
+            rootFolder.isFolder = true;
+
+            debug("Root folder ID: " + rootFolderId);
+            
+            return rootFolder;
+        }
+
+        void processFiles(Item folder, string path = "") {
+            folder.path = path + folder.title + "/";
+
+            debug("Create directory at: " + folder.path);
+
+            try { File.new_for_path(folder.path).make_directory(); } catch (Error e) {};
+                        
+            foreach (var child in folder.children) {
+                if (child.isFolder) {
+                    processFiles(child, folder.path);
+                } else if (child.downloadUrl != null) {
+                    child.path = folder.path + child.title;
+                    download(child.downloadUrl, child.path);
+                }
+            }
         }
         
         public void getFiles() {
-
-
-            // TODO: rewrite to do this instead:
-            // 1. Use About resource to get root folder id
-            // 2. Write reusable logic that requests folders and files filtered by folder id and store in a tree structure
-            // 3. Recurse reusable logic on each folder found in the previous run
-
             // Future stuff: 
             // * populate tree structure with local information
             // * use local information to decide if download is needed
             // * use set diff on paths to find files not in Google Drive to be uploaded
-            
-            parseItems();
 
-            stdout.printf("Map size: %d\n", items.size);
-
-            int count = 0;
-            
-            foreach (var item in items.values) {
-                if (item.isFolder) {
-                    folders.set(item.id, item);
-                    count++;
-                }
-            }
-
-            stdout.printf("Folders: %d\n", count);
-
-            count = 0;
-
-            var rootFolder = new Item();
-            foreach (var item in items.values) {
-                if (item.isParentRoot) {
-                    if (!item.isFolder) rootFolder.children.add(item);
-                } else {
-                    // TODO: find out why some parents does not exist in the main list
-                    if (!folders.has_key(item.parentId)) {
-                        warning(item.title + " has no parent, skipping!");
-                        continue;
-                    }
-                    var parent = folders.get(item.parentId);
-                    parent.children.add(item);
-                }
-                
-                count++;
-            }
-
-            stdout.printf("Items processed: %d\n", count);
-
-            processFolder(rootFolder);
-            /*foreach (var folder in folders.values) {
-                if (folder.isParentRoot) {
-                    processFolder(folder);
-                }
-            }*/
-        }
-
-        void processFolder(Item folder, string root = "/") {
-            print("Processing folder: " + folder.title + "\n");
-
-            var newDir = File.new_for_path ("test" + root + folder.title);
-            try { newDir.make_directory(); } catch (Error e) {};
-            
-            foreach (var child in folder.children) {
-                var path = root + folder.title + "/";
-                if (child.isFolder) {
-                    processFolder(child, path);
-                } else if (child.downloadUrl != null) {
-                    download(child.downloadUrl, path + child.title);
-                }
-            }
+            var rootFolder = getRootFolder();
+            getItems(rootFolder);
+            processFiles(rootFolder);
         }
 
         void download(string url, string path) {
+            debug("Download file to: " + path);
+
             var url_auth = url + @"&access_token=$(AuthInfo.access_token)";
             
             var message = new Soup.Message("GET", url_auth);
@@ -162,7 +120,7 @@ namespace GDriveSync {
             var data = message.response_body.flatten().data;
 
             try {
-                var newFile = File.new_for_path ("test" + path);
+                var newFile = File.new_for_path (path);
                 var os = newFile.create(FileCreateFlags.PRIVATE);
                 size_t bytes_written;
                 os.write_all (data, out bytes_written);
