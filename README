@@ -1,14 +1,14 @@
-Linux client written i Vala that can download Google Drive contents to a local folder.
+Linux client written i Vala to sync Google Drive contents to a local folder.
 
 Stuff that works:
 * Google OAuth2 authentication (stored using GConf)
 * Download Google Drive contents
+* Only download modified files
 
 Stuff that is TODO:
-* Only download modified files
 * Only download owned files (optional?)
 * Upload new files
 * Delete extraenous local files
 * Configurable destination
 * Run as daemon
-* Optional status reporting using GNOME 3 Message Tray 
+* Optional status reporting using GNOME 3 Message Tray

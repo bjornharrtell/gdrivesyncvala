@@ -10,16 +10,17 @@ namespace GDriveSync {
             public bool isFolder;
             public string path;
             public string downloadUrl;
-            //public string modifiedDate;
-            //public string fileSize;
+            public long modifiedDate;
+            public int64 fileSize;
 
-            //public string localModifiedDate;
-            //public string localFileSize;
+            public long localModifiedDate;
+            public int64 localFileSize;
 
             public Gee.List<Item> children;
 
             public Item() {
                 children = new ArrayList<Item>();
+                localModifiedDate = 0;
             }
         }
         
@@ -30,7 +31,7 @@ namespace GDriveSync {
             var message = new Soup.Message("GET", url);
             session.send_message(message);
             var data = (string) message.response_body.flatten().data;
-            debug("Got response from Google Drive API");
+            //debug("Got response from Google Drive API");
 		    //debug(data + "\n");
             try {
                 parser.load_from_data (data, -1);
@@ -56,6 +57,14 @@ namespace GDriveSync {
                 // NOTE: ignore items with other than 1 parent
                 if (parents.get_length() != 1) continue;
                 item.title = object.get_string_member("title");
+                //var modifiedDate = object.get_string_member("modifiedDate");
+                if (object.has_member("fileSize")) {
+                    var modifiedDate = new TimeVal();
+                    var modifiedDateISO = object.get_string_member("modifiedDate");
+                    modifiedDate.from_iso8601(modifiedDateISO);
+                    item.modifiedDate = modifiedDate.tv_sec;
+                }
+                item.fileSize = object.has_member("fileSize") ? (int64) object.get_int_member("fileSize") : 0;
                 item.downloadUrl = object.has_member("downloadUrl") ? object.get_string_member("downloadUrl") : null;
                 var mimeType = object.get_string_member("mimeType");
                 item.isFolder = mimeType == "application/vnd.google-apps.folder";
@@ -92,39 +101,77 @@ namespace GDriveSync {
             foreach (var child in folder.children) {
                 if (child.isFolder) {
                     processFiles(child, folder.path);
-                } else if (child.downloadUrl != null) {
+                } else {
                     child.path = folder.path + child.title;
-                    download(child.downloadUrl, child.path);
+                }
+            }
+        }
+
+        void syncFiles(Item folder) {
+            foreach (var child in folder.children) {
+                if (child.isFolder) {
+                    syncFiles(child);
+                } else if (child.downloadUrl != null) {
+                    if (
+                        child.modifiedDate > child.localModifiedDate) {
+                        debug("Remote file newer or local file missing, will download");
+                        //debug("Modified date %lu", child.modifiedDate);
+                        //debug("Local modified date %lu", child.localModifiedDate);
+                        download(child);
+                    } else {
+                        debug("Remote file older or same, skip download");
+                    }
+                }
+            }
+        }
+
+        void getLocalInfo(Item folder) {
+            foreach (var child in folder.children) {
+                //debug("Getting local info for " + child.path);
+                File file = File.new_for_path(child.path);
+                try {
+                    FileInfo info = file.query_info ("standard::*,time::*", FileQueryInfoFlags.NONE);
+                    var type = info.get_file_type();
+                    var size = info.get_size();
+                    var modifiedDate = info.get_modification_time().tv_sec;
+                    if (type == FileType.DIRECTORY) {
+                        getLocalInfo(child);
+                    } else if (type == FileType.REGULAR) {
+                        child.localFileSize = size;
+                        child.localModifiedDate = modifiedDate;
+                    }
+                } catch (Error e) {
+                    // debug(e.message);
+                    // Failed to get local info, ignore and move on...
                 }
             }
         }
         
         public void getFiles() {
-            // Future stuff: 
-            // * populate tree structure with local information
-            // * use local information to decide if download is needed
-            // * use set diff on paths to find files not in Google Drive to be uploaded
-
             var rootFolder = getRootFolder();
             getItems(rootFolder);
             processFiles(rootFolder);
+            getLocalInfo(rootFolder);
+            syncFiles(rootFolder);
         }
 
-        void download(string url, string path) {
-            debug("Download file to: " + path);
+        void download(Item item) {
+            debug("Download file to: " + item.path);
 
-            var url_auth = url + @"&access_token=$(AuthInfo.access_token)";
+            var url_auth = item.downloadUrl + @"&access_token=$(AuthInfo.access_token)";
             
             var message = new Soup.Message("GET", url_auth);
             session.send_message(message);
             var data = message.response_body.flatten().data;
 
             try {
-                var newFile = File.new_for_path (path);
-                var os = newFile.create(FileCreateFlags.PRIVATE);
+                var newFile = File.new_for_path(item.path);
+                var os = newFile.create(FileCreateFlags.PRIVATE | FileCreateFlags.REPLACE_DESTINATION);
                 size_t bytes_written;
-                os.write_all (data, out bytes_written);
+                os.write_all(data, out bytes_written);
                 os.close();
+                //debug("Set TIME_MODIFIED to: %lu", item.modifiedDate);
+                newFile.set_attribute_uint64(FileAttribute.TIME_MODIFIED, item.modifiedDate, 0);
             } catch (Error e) {
                 critical(e.message);
             }
