@@ -50,7 +50,7 @@ namespace GDriveSync.Auth {
      * 4. Do full authentication (will prompt for login and access grant)
      **/
     public void authenticate() {
-        debug("Requesting/checking authorization");
+        message("Attempting authentication using Google OAuth2");
         if (!AuthInfo.hasValidAccessToken()) {
             GConf.read();
             if (!AuthInfo.hasValidAccessToken()) {
@@ -80,7 +80,7 @@ namespace GDriveSync.Auth {
     }
 
     void requestToken(string code) {
-        debug("Attempting get new access token from authorization code");
+        debug("Attempting to get new access token from authorization code");
 
         var params = @"code=$(code)&";
         params += "client_id=783554179767.apps.googleusercontent.com&";

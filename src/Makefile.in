@@ -300,10 +300,7 @@ AM_CPPFLAGS = \
 	-DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\" \
 	$(GDRIVESYNC_CFLAGS)
 
-AM_CFLAGS = \
-	 -Wall\
-	 -g
-
+AM_CFLAGS = -Os -s
 gdrivesync_SOURCES = \
 	gdrivesync.vala config.vapi auth.vala driveapi.vala authinfo.vala gconf.vala
 
