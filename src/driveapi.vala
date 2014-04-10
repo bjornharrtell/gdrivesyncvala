@@ -4,6 +4,7 @@ namespace GDriveSync {
 
     class DriveAPI : GLib.Object {     
 
+        
         class Item : GLib.Object {
             public string id;
             public string title;
@@ -23,7 +24,7 @@ namespace GDriveSync {
         Json.Parser parser = new Json.Parser();
 
         public void getFiles() {
-            message("Retrieve root folder metadata from Google Drive");
+            /*message("Retrieve root folder metadata from Google Drive");
             var rootFolder = getRootFolder();
             message("Retrieve folders metadata from Google Drive");
             getItems(rootFolder);
@@ -32,9 +33,22 @@ namespace GDriveSync {
             message("Examine local files");
             getLocalInfo(rootFolder);
             message("Syncronizing files");
-            syncFiles(rootFolder);
+            syncFiles(rootFolder);*/
+            
+            // TODO: delete extraenous local files
+            //deleteExtraenousLocal();
+            
+            // TODO: use metadata to find files that has been previously synced but is now locally deleted
+            //deleteExtraenousRemote()
+            // TODO: store metadata about every synced item
+
+
+            var localMeta = new LocalMeta();
+
+            localMeta.readFromPath();
+            localMeta.save();
         }
-        
+
         Json.Object requestJson(string url) {
             var message = new Soup.Message("GET", url);
             session.send_message(message);
@@ -98,7 +112,7 @@ namespace GDriveSync {
             var rootFolderId = json.get_string_member("rootFolderId");
             var rootFolder = new Item();
             rootFolder.id = rootFolderId;
-            rootFolder.title = "Google Drive";
+            rootFolder.title = ROOTFOLDER;
             rootFolder.isFolder = true;            
             return rootFolder;
         }

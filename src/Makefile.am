@@ -15,7 +15,7 @@ AM_CFLAGS = -Os -s
 bin_PROGRAMS = gdrivesync
 
 gdrivesync_SOURCES = \
-	gdrivesync.vala config.vapi auth.vala driveapi.vala authinfo.vala gconf.vala
+	gdrivesync.vala config.vapi auth.vala driveapi.vala authinfo.vala gconf.vala localmeta.vala
 
 gdrivesync_VALAFLAGS =  \
 	--pkg gtk+-3.0 --pkg webkitgtk-3.0 --pkg json-glib-1.0 --pkg gee-0.8 --pkg gconf-2.0

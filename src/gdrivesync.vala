@@ -3,6 +3,9 @@ using GDriveSync.AuthInfo;
 namespace GDriveSync {
 
     const string VERSION = "0.1.0";
+    const string ROOTFOLDER = "Google Drive";
+    const string CONFIGFOLDER = ".gdrivesync";
+    const string LOCALMETAFILE = "localmeta.json";
     
     bool version = false;
     string? output = null;
@@ -35,6 +38,10 @@ namespace GDriveSync {
             if (version) {
                 stdout.printf ("GDriveSync %s\n", VERSION);
                 return 0;
+            }
+
+            if (output == null) {
+                output = "./";
             }
             
             Auth.authenticate();

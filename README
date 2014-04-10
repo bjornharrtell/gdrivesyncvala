@@ -1,7 +1,5 @@
 Linux client written in Vala to sync Google Drive contents to a local folder.
 
-NOTE: I recommend https://github.com/astrada/google-drive-ocamlfuse instead.
-
 ---
 
 Usage:
