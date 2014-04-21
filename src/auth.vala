@@ -27,7 +27,7 @@ namespace GDriveSync.Auth {
                 var split = title.split("=");
                 if (split.length == 2 && split[0] == "Success code") {
                     var code = split[1];
-                    window.close();
+                    //window.close();
                     requestToken(code);
                 }
             }

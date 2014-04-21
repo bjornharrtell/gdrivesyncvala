@@ -25,7 +25,7 @@ namespace GDriveSync {
             string? name = null;
             while ((name = dir.read_name ()) != null) {
                 var filePath = Path.build_filename(path, name);
-                var file = File.new_for_path(filePath);
+                var file = GLib.File.new_for_path(filePath);
                 var fileMeta = new FileMeta();
                 try {
                     FileInfo info = file.query_info ("standard::*,time::*", FileQueryInfoFlags.NONE);
@@ -88,7 +88,7 @@ namespace GDriveSync {
             object.set_array_member("files", array);
             
             var dir = Path.get_dirname(path);
-            File file = File.new_for_path(dir);
+            var file = GLib.File.new_for_path(dir);
             file.make_directory_with_parents();
             
             generator.to_file(path);

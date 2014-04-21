@@ -46,9 +46,9 @@ namespace GDriveSync {
             
             Auth.authenticate();
 
-            var api = new DriveAPI();
+            //var api = new DriveAPI();
             
-            api.getFiles();
+            //api.getFiles();
 
             return 0;
         } 
