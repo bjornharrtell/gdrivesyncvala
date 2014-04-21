@@ -41,14 +41,13 @@ namespace GDriveSync {
             }
 
             if (output == null) {
-                output = "./";
+                output = "./gdrive";
             }
             
             Auth.authenticate();
 
-            //var api = new DriveAPI();
-            
-            //api.getFiles();
+            var root = new File.as_root();
+            root.sync();
 
             return 0;
         } 
