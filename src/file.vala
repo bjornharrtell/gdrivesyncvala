@@ -4,6 +4,7 @@ namespace GDriveSync {
 
     public class File : GLib.Object {
         public string id { get; set; }
+        public bool remoteExists { get; set; }
         public string title { get; set; }
         public bool isFolder { get; set; }
         public bool isRoot { get; set; }
@@ -13,21 +14,9 @@ namespace GDriveSync {
         public long modifiedDate { get; set; }
         public string MD5 { get; set; }
 
-        public long lastSyncedDate { get; set; }
+        public bool wasSynced { get; set; }
+        public bool localExists { get; set; }
         public string localMD5 { get; set; }
-        
-        public State state { get; set; }
-
-        // possible states.. move to internal logic in doSync
-        public enum State {
-            SYNC,
-            LOCAL_NEW,
-            LOCAL_CHANGED,
-            LOCAL_DELETED,
-            REMOTE_NEW,
-            REMOTE_CHANGED,
-            REMOTE_DELETED
-        }
         
         public HashMap<string, File> children = new HashMap<string, File>();
 
@@ -41,27 +30,48 @@ namespace GDriveSync {
         }
 
         public void sync() {
-            // populate with local file meta
             fetchLocalMeta(this);
-            // add persisted meta (file path, last synced date)
+            // TODO: add local metadata (
             // LocalDB.fetchMeta(this);
-            // add remote meta
-            //DriveAPI.fetchMeta(this);
-            doSync();
+            DriveAPI.fetchMeta(this);
+            doSync(this);
+        }
+
+        static void doSync(File file) {
+
+            // TODO: need to rethink this logic.. to make it as small and sane as possible
             
-        }
-
-        void doSync() {
-            // TODO: do appropriate action depending on state
-            // persist last synced date on download/upload!
-            // remove data from persistance if delete
-        }
-
-        void createDir() {
-            if (isFolder) {
-                var newPath = Path.build_filename(output, path);
-                try { GLib.File.new_for_path(newPath).make_directory(); } catch (Error e) {};
+            if (file.isFolder) {
+                // TODO: should handle deletes and remote creation too
+                file.createDir();
+            } else if (!file.remoteExists && file.wasSynced) {
+                // file exists locally and was synced with remote but it longer exists remotely, delete it locally
+                file.remove();
+            } else if (!file.remoteExists && !file.wasSynced) {
+                // file exist locally and hasn't been synced before and does not exist remotely, upload
+                DriveAPI.upload(file);
+            } else if (file.remoteExists && !file.wasSynced) {
+                // file exists remotely and has not been synced before, download
+                DriveAPI.download(file);
+            } else if (file.remoteExists && file.wasSynced && !file.localExists) {
+                // file exists remotely, has been synced before but no longer exists locally, delete it remotely
+                DriveAPI.remove(file);
             }
+
+            foreach (var child in file.children.values) {
+                doSync(child);
+            }
+        }
+
+        public void createDir() {
+            if (isFolder) {
+                try { getLocalFile().make_directory(); } catch (Error e) {};
+            }
+        }
+
+        public void remove() {
+           getLocalFile().delete();
+           // TODO: also remove persisted data
         }
 
         public static void fetchLocalMeta(File folder) {
@@ -76,6 +86,7 @@ namespace GDriveSync {
 
                 var file = new File();
                 file.path = relativePath;
+                file.localExists = true;
                 
                 FileInfo info = file.queryInfo();
                 var type = info.get_file_type();
@@ -93,12 +104,8 @@ namespace GDriveSync {
         }
 
         GLib.File getLocalFile() {
-            var localPath = output != null ? Path.build_filename(output, path) : path;
+            var localPath = Path.build_filename(output, path);
             return GLib.File.new_for_path(localPath);
-        }
-
-        public bool queryExistsLocally() {
-	        return getLocalFile().query_exists();
         }
 
         FileInfo queryInfo() {

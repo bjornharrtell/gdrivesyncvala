@@ -26,7 +26,7 @@ namespace GDriveSync.DriveAPI  {
     File parseItem(Json.Node node) {
         var object = node.get_object();
         var file = new File();
-        file.id = object.get_string_member("id");
+        
 
         // NOTE: ignore items with other than 1 parent
         var parents = object.get_array_member("parents");
@@ -39,6 +39,8 @@ namespace GDriveSync.DriveAPI  {
         }
         if (!isOwned && !notowned) return null;
 
+        file.id = object.get_string_member("id");
+        file.remoteExists = true;
         file.title = object.get_string_member("title");
         if (object.has_member("modifiedDate")) {
             var modifiedDate = TimeVal();
@@ -46,6 +48,7 @@ namespace GDriveSync.DriveAPI  {
             file.modifiedDate = modifiedDate.tv_sec;
         }
         //file.fileSize = object.has_member("fileSize") ? (int64) object.get_int_member("fileSize") : 0;
+        file.MD5 = object.has_member("md5Checksum") ? object.get_string_member("md5Checksum") : null;
         file.downloadUrl = object.has_member("downloadUrl") ? object.get_string_member("downloadUrl") : null;
 
         var mimeType = object.get_string_member("mimeType");
@@ -66,7 +69,16 @@ namespace GDriveSync.DriveAPI  {
             var file = parseItem(node);
             if (file != null) {
                 file.path = folder.path + file.title;
-                folder.children.set(file.title, file);
+                if (folder.children.has_key(file.title)) {
+                    var existing = folder.children.get(file.title);
+                    existing.id = file.id;
+                    existing.modifiedDate = file.modifiedDate;
+                    existing.MD5 = file.MD5;
+                    existing.downloadUrl = file.downloadUrl;
+                    file = existing;
+                } else {
+                    folder.children.set(file.title, file);
+                }
                 if (file.isFolder) {
                     file.path = file.path + "/";
                     getItemsMeta(file);
@@ -84,11 +96,6 @@ namespace GDriveSync.DriveAPI  {
         var json = requestJson(url);
         var rootFolderId = json.get_string_member("rootFolderId");
         root.id = rootFolderId;
-        root.title = ROOTFOLDER;
-        root.path = "";
-        root.isFolder = true;
-        root.isRoot = true;
-        root.state = File.State.REMOTE_NEW;
     }
 
     void download(File file) {
@@ -112,6 +119,14 @@ namespace GDriveSync.DriveAPI  {
         } catch (Error e) {
             critical(e.message);
         }
+    }
+
+    void upload(File file) {
+        
+    }
+
+    void remove(File file) {
+        
     }
 }
 
