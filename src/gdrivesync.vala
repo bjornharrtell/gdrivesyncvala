@@ -46,8 +46,8 @@ namespace GDriveSync {
             
             Auth.authenticate();
 
-            var root = new File.as_root();
-            root.sync();
+            var root = new DriveFile.as_root();
+            DriveFile.sync(root);
 
             return 0;
         } 
