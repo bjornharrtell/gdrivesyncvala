@@ -40,7 +40,7 @@ namespace GDriveSync {
             } else if (!file.remoteExists && !file.wasSynced) {
                 // file exist locally and hasn't been synced before and does not exist remotely, upload
                 file.upload();
-            } else if (file.remoteExists && !file.wasSynced) {
+            } else if (file.remoteExists && !file.wasSynced && file.downloadUrl != null) {
                 // file exists remotely and has not been synced before, download
                 file.download();
             } else if (file.remoteExists && file.wasSynced && !file.localExists) {
@@ -63,6 +63,7 @@ namespace GDriveSync {
 
                 var file = new DriveFile();
                 file.path = relativePath;
+                file.title = name;
                 file.localExists = true;
 
                 FileInfo info = file.queryInfo();
