@@ -31,25 +31,61 @@ namespace GDriveSync {
 
             // TODO: need to rethink this logic.. to make it as small and sane as possible
 
+            bool folderDeleted = false;
+            
             if (file.isFolder) {
-                // TODO: should handle deletes and remote creation too
-                file.createDir();
-            } else if (!file.remoteExists && file.wasSynced) {
-                // file exists locally and was synced with remote but it longer exists remotely, delete it locally
-                file.delete();
-            } else if (!file.remoteExists && !file.wasSynced) {
-                // file exist locally and hasn't been synced before and does not exist remotely, upload
-                file.upload();
-            } else if (file.remoteExists && !file.wasSynced && file.downloadUrl != null) {
-                // file exists remotely and has not been synced before, download
-                file.download();
-            } else if (file.remoteExists && file.wasSynced && !file.localExists) {
-                // file exists remotely, has been synced before but no longer exists locally, delete it remotely
-                file.deleteRemote();
+                if (file.localExists) {
+                    if (!file.remoteExists) file.createRemoteDir();
+                } else {
+                    if (file.wasSynced) {
+                        if (file.remoteExists) {
+                            file.deleteRemote();
+                            folderDeleted = true;
+                        }
+                    } else {
+                        if (file.remoteExists) file.createDir();
+                    }
+                }
+            } else {
+                if (file.remoteExists) {
+                    if (!file.wasSynced && file.downloadUrl != null) {
+                        // file exists remotely and has not been synced before
+                        message(file.MD5);
+                        message(file.localMD5);
+                        if (file.MD5 != file.localMD5) {
+                            message("%ld", file.modifiedDate);
+                            message("%ld", file.localModifiedDate);
+                            
+                            if (!file.localExists) {
+                                file.download();
+                            } else {
+                                if (file.modifiedDate >= file.localModifiedDate) {
+                                    file.delete();
+                                    file.download();
+                                } else {
+                                    file.upload();
+                                }
+                            }
+                        }
+                    } else if (file.wasSynced && !file.localExists) {
+                        // file exists remotely, has been synced before but no longer exists locally, delete it remotely
+                        file.deleteRemote();
+                    }
+                } else {
+                    if (file.wasSynced) {
+                        // file exists locally and was synced with remote but it longer exists remotely, delete it locally
+                        file.delete();
+                    } else {
+                        // file exist locally and hasn't been synced before and does not exist remotely, upload
+                        file.upload();
+                    }
+                }
             }
 
-            foreach (var child in file.children.values) {
-                doSync(child);
+            if (!folderDeleted) {
+                foreach (var child in file.children.values) {
+                    doSync(child);
+                }
             }
         }
 
@@ -69,7 +105,7 @@ namespace GDriveSync {
                 FileInfo info = file.queryInfo();
                 var type = info.get_file_type();
                 var size = info.get_size();
-                var localModifiedDate = info.get_modification_time().tv_sec;
+                file.localModifiedDate = info.get_modification_time().tv_sec;
                 if (type == FileType.DIRECTORY) {
                     file.isFolder = true;
                     fetchLocalMeta(file);
@@ -150,6 +186,7 @@ namespace GDriveSync {
                     if (folder.children.has_key(file.title)) {
                         var existing = folder.children.get(file.title);
                         existing.id = file.id;
+                        existing.remoteExists = file.remoteExists;
                         existing.modifiedDate = file.modifiedDate;
                         existing.MD5 = file.MD5;
                         existing.downloadUrl = file.downloadUrl;
@@ -176,7 +213,7 @@ namespace GDriveSync {
             root.id = rootFolderId;
         }
 
-        public virtual void download() {
+        public void download() {
             message("Downloading " + path);
 
             var url_auth = downloadUrl + @"&access_token=$(AuthInfo.access_token)";
@@ -198,12 +235,16 @@ namespace GDriveSync {
             }
         }
 
-        public virtual void upload() {
+        public void upload() {
             message("Uploading " + path);
         }
 
-        public virtual void deleteRemote() {
+        public void deleteRemote() {
             message("Deleting " + path);
+        }
+
+        public void createRemoteDir() {
+            message("Create remote dir " + path);
         }
     }
 
