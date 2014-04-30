@@ -36,19 +36,17 @@ namespace GDriveSync {
             if (file.isFolder) {
                 if (file.localExists) {
                     if (!file.remoteExists) file.createRemoteDir();
-                } else {
-                    if (file.wasSynced) {
-                        if (file.remoteExists) {
-                            file.deleteRemote();
-                            folderDeleted = true;
-                        }
-                    } else {
-                        if (file.remoteExists) file.createDir();
+                } else if (file.wasSynced) {
+                    if (file.remoteExists) {
+                        file.deleteRemote();
+                        folderDeleted = true;
                     }
+                } else {
+                    if (file.remoteExists) file.createDir();
                 }
             } else {
                 if (file.remoteExists) {
-                    if (!file.wasSynced && file.downloadUrl != null) {
+                    //if (!file.wasSynced && file.downloadUrl != null) {
                         // file exists remotely and has not been synced before
                         message(file.MD5);
                         message(file.localMD5);
@@ -63,14 +61,14 @@ namespace GDriveSync {
                                     file.delete();
                                     file.download();
                                 } else {
-                                    file.upload();
+                                    file.update();
                                 }
                             }
                         }
-                    } else if (file.wasSynced && !file.localExists) {
+                    //} else if (file.wasSynced && !file.localExists) {
                         // file exists remotely, has been synced before but no longer exists locally, delete it remotely
-                        file.deleteRemote();
-                    }
+                        //file.deleteRemote();
+                    //}
                 } else {
                     if (file.wasSynced) {
                         // file exists locally and was synced with remote but it longer exists remotely, delete it locally
@@ -104,7 +102,7 @@ namespace GDriveSync {
 
                 FileInfo info = file.queryInfo();
                 var type = info.get_file_type();
-                var size = info.get_size();
+                file.localFileSize = info.get_size();
                 file.localModifiedDate = info.get_modification_time().tv_sec;
                 if (type == FileType.DIRECTORY) {
                     file.isFolder = true;
@@ -237,6 +235,54 @@ namespace GDriveSync {
 
         public void upload() {
             message("Uploading " + path);
+
+            var url = "https://www.googleapis.com/upload/drive/v2/files?";
+            url += url + @"&uploadType=resumable&access_token=$(AuthInfo.access_token)";
+
+            Soup.Session session = new Soup.Session();
+            var msg = new Soup.Message("POST", url);
+
+            msg.request_headers.append("X-Upload-Content-Type", "image/png");
+            msg.request_headers.append("X-Upload-Content-Length", localFileSize.to_string());
+            msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
+
+            var generator = new Json.Generator();
+            var root = new Json.Node(Json.NodeType.OBJECT);
+            var object = new Json.Object();
+            root.set_object(object);
+            generator.set_root(root);
+            object.set_string_member("title", title);
+            var json = generator.to_data(null);
+
+            msg.request_body.append(Soup.MemoryUse.COPY, json.data);
+            session.send_message(msg);
+
+            message("sending message");
+            session.send_message(msg);
+
+            var location = msg.response_headers.get("Location");
+
+            msg = new Soup.Message("PUT", location);
+            msg.request_headers.append("Authorization", @"Bearer $(AuthInfo.access_token)");
+            msg.request_headers.append("Content-Type", "image/png");
+
+            var file = getLocalFile();
+            var stream = file.read();
+	        uint8 fbuf[1024];
+	        size_t size;
+
+	        while ((size = stream.read (fbuf)) > 0) {
+                msg.request_body.append(Soup.MemoryUse.COPY, fbuf);
+	        }
+            msg.request_body.flatten();
+            msg.request_headers.append("Content-Length", localFileSize.to_string());
+            session.send_message(msg);
+            var data = (string) msg.response_body.flatten().data;
+            message(data);
+        }
+
+        public void update() {
+            message("Uploading update " + path);
         }
 
         public void deleteRemote() {

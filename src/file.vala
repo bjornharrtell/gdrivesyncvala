@@ -12,6 +12,7 @@ namespace GDriveSync {
 
         public bool wasSynced { get; set; }
         public bool localExists { get; set; }
+        public int64 localFileSize { get; set; }
         public long localModifiedDate { get; set; }
         public string localMD5 { get; set; }
                 
@@ -45,7 +46,7 @@ namespace GDriveSync {
             var file = getLocalFile();
             var checksum = new Checksum(ChecksumType.MD5);
             var stream = file.read();
-	        uint8 fbuf[100];
+	        uint8 fbuf[1024];
 	        size_t size;
 
 	        while ((size = stream.read (fbuf)) > 0) {
