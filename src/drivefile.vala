@@ -10,6 +10,8 @@ namespace GDriveSync {
 
         public HashMap<string, DriveFile> children = new HashMap<string, DriveFile>();
 
+        static Soup.Session session = new Soup.Session();
+        
         DriveFile() {
         }
 
@@ -123,9 +125,8 @@ namespace GDriveSync {
         }
 
         static Json.Object requestJson(string url) {
-            Soup.Session session = new Soup.Session();
             Json.Parser parser = new Json.Parser();
-            var message = new Soup.Message("GET", url);
+            var message = request("GET", url);
             session.send_message(message);
             var data = (string) message.response_body.flatten().data;
             try {
@@ -173,7 +174,6 @@ namespace GDriveSync {
             message("Requesting metadata for " + folder.title);
 
             var url = nextLink != null ? nextLink : @"https://www.googleapis.com/drive/v2/files?q=trashed+%3D+false+and+'$(folder.id)'+in+parents";
-            url += @"&access_token=$(AuthInfo.access_token)";
             var json = requestJson(url);
             var items = json.get_array_member("items");
 
@@ -205,20 +205,25 @@ namespace GDriveSync {
 
         static void fetchRootFolderMeta(DriveFile root) {
             var url = "https://www.googleapis.com/drive/v2/about?";
-            url += @"access_token=$(AuthInfo.access_token)";
             var json = requestJson(url);
             var rootFolderId = json.get_string_member("rootFolderId");
             root.id = rootFolderId;
         }
 
+        static Soup.Message request(string method, string url) {
+            var msg = new Soup.Message(method, url);
+            msg.request_headers.append("Authorization", @"Bearer $(AuthInfo.access_token)");
+            return msg;
+        }
+        
         public void download() {
             message("Downloading " + path);
 
-            var url_auth = downloadUrl + @"&access_token=$(AuthInfo.access_token)";
-
-            Soup.Session session = new Soup.Session();
-            var message = new Soup.Message("GET", url_auth);
+            var message = request("GET", downloadUrl);
             session.send_message(message);
+
+            // TODO: read/write as chucked data
+            
             var data = message.response_body.flatten().data;
 
             try {
@@ -233,19 +238,7 @@ namespace GDriveSync {
             }
         }
 
-        public void upload() {
-            message("Uploading " + path);
-
-            var url = "https://www.googleapis.com/upload/drive/v2/files?";
-            url += url + @"&uploadType=resumable&access_token=$(AuthInfo.access_token)";
-
-            Soup.Session session = new Soup.Session();
-            var msg = new Soup.Message("POST", url);
-
-            msg.request_headers.append("X-Upload-Content-Type", "image/png");
-            msg.request_headers.append("X-Upload-Content-Length", localFileSize.to_string());
-            msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
-
+        string generateMetaData() {
             var generator = new Json.Generator();
             var root = new Json.Node(Json.NodeType.OBJECT);
             var object = new Json.Object();
@@ -253,8 +246,32 @@ namespace GDriveSync {
             generator.set_root(root);
             object.set_string_member("title", title);
             var json = generator.to_data(null);
+            return json;
+        }
 
-            msg.request_body.append(Soup.MemoryUse.COPY, json.data);
+        string guessMimeType() {
+            var file = getLocalFile();
+            var stream = file.read();
+            var bytes = stream.read_bytes(1024*1024);
+            var contentType = GLib.ContentType.guess(title, bytes.get_data(), null);
+            var mimeType = GLib.ContentType.get_mime_type(contentType);
+            message("Guessed mime-type: " + mimeType);
+            return mimeType;
+        }
+
+        public void upload() {
+            message("Uploading " + path);
+
+            var url = "https://www.googleapis.com/upload/drive/v2/files?uploadType=resumable";
+
+            Soup.Session session = new Soup.Session();
+            var msg = request("POST", url);
+
+            msg.request_headers.append("X-Upload-Content-Type", "image/png");
+            msg.request_headers.append("X-Upload-Content-Length", localFileSize.to_string());
+            msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
+
+            msg.request_body.append(Soup.MemoryUse.COPY, generateMetaData().data);
             session.send_message(msg);
 
             message("sending message");
@@ -262,9 +279,9 @@ namespace GDriveSync {
 
             var location = msg.response_headers.get("Location");
 
-            msg = new Soup.Message("PUT", location);
+            msg = request("PUT", location);
             msg.request_headers.append("Authorization", @"Bearer $(AuthInfo.access_token)");
-            msg.request_headers.append("Content-Type", "image/png");
+            msg.request_headers.append("Content-Type", guessMimeType());
 
             var file = getLocalFile();
             var stream = file.read();
