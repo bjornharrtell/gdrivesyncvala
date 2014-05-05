@@ -6,6 +6,7 @@ namespace GDriveSync {
     const string ROOTFOLDER = "Google Drive";
     const string CONFIGFOLDER = ".gdrivesync";
     const string LOCALMETAFILE = "localmeta.json";
+    const string LOCALMETADB = "localmeta.db";
     
     bool version = false;
     string? output = null;

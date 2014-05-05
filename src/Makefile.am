@@ -18,7 +18,7 @@ gdrivesync_SOURCES = \
 	gdrivesync.vala config.vapi auth.vala authinfo.vala gconf.vala localmeta.vala file.vala drivefile.vala
 
 gdrivesync_VALAFLAGS =  \
-	--pkg gtk+-3.0 --pkg webkitgtk-3.0 --pkg json-glib-1.0 --pkg gee-0.8 --pkg gconf-2.0
+	--pkg gtk+-3.0 --pkg webkitgtk-3.0 --pkg json-glib-1.0 --pkg gee-0.8 --pkg gconf-2.0 --pkg sqlite3
 
 
 gdrivesync_LDFLAGS = \

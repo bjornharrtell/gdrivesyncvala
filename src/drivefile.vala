@@ -10,6 +10,8 @@ namespace GDriveSync {
 
         public HashMap<string, DriveFile> children = new HashMap<string, DriveFile>();
 
+        static LocalMeta localMeta = new LocalMeta();
+
         static Soup.Session session = new Soup.Session();
         
         DriveFile() {
@@ -23,8 +25,6 @@ namespace GDriveSync {
 
         public static void sync(DriveFile root) {
             fetchLocalMeta(root);
-            // TODO: add local metadata (
-            // LocalDB.fetchMeta(this);
             fetchRemoteMeta(root);
             doSync(root);
         }
@@ -48,12 +48,9 @@ namespace GDriveSync {
                 }
             } else {
                 if (file.remoteExists) {
-                    //if (!file.wasSynced && file.downloadUrl != null) {
+                    if (!file.wasSynced && file.downloadUrl != null) {
                         // file exists remotely and has not been synced before
-                        if (file.MD5 != file.localMD5) {
-                            message("%ld", file.modifiedDate);
-                            message("%ld", file.localModifiedDate);
-                            
+                        if (file.MD5 != file.localMD5) {                            
                             if (!file.localExists) {
                                 file.download();
                             } else {
@@ -65,10 +62,10 @@ namespace GDriveSync {
                                 }
                             }
                         }
-                    //} else if (file.wasSynced && !file.localExists) {
+                    } else if (file.wasSynced && !file.localExists) {
                         // file exists remotely, has been synced before but no longer exists locally, delete it remotely
-                        //file.deleteRemote();
-                    //}
+                        file.deleteRemote();
+                    }
                 } else {
                     if (file.wasSynced) {
                         // file exists locally and was synced with remote but it longer exists remotely, delete it locally
@@ -99,6 +96,7 @@ namespace GDriveSync {
                 file.path = relativePath;
                 file.title = name;
                 file.localExists = true;
+                file.wasSynced = localMeta.exists(file.path);
 
                 FileInfo info = file.queryInfo();
                 var type = info.get_file_type();
@@ -193,6 +191,7 @@ namespace GDriveSync {
                         existing.downloadUrl = file.downloadUrl;
                         file = existing;
                     } else {
+                        file.wasSynced = localMeta.exists(file.path);
                         folder.children.set(file.title, file);
                     }
                     if (file.isFolder) {
@@ -239,6 +238,8 @@ namespace GDriveSync {
             } catch (Error e) {
                 critical(e.message);
             }
+
+            localMeta.insert(path);
         }
 
         string generateMetaData() {
@@ -299,6 +300,8 @@ namespace GDriveSync {
             session.send_message(msg);
             var data = (string) msg.response_body.flatten().data;
             message(data);
+
+            localMeta.insert(path);
         }
 
         public void update() {
@@ -307,6 +310,8 @@ namespace GDriveSync {
 
         public void deleteRemote() {
             message("Deleting " + path);
+
+            localMeta.remove(path);
         }
 
         public void createRemoteDir() {
