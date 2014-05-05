@@ -50,8 +50,6 @@ namespace GDriveSync {
                 if (file.remoteExists) {
                     //if (!file.wasSynced && file.downloadUrl != null) {
                         // file exists remotely and has not been synced before
-                        message(file.MD5);
-                        message(file.localMD5);
                         if (file.MD5 != file.localMD5) {
                             message("%ld", file.modifiedDate);
                             message("%ld", file.localModifiedDate);
@@ -149,7 +147,9 @@ namespace GDriveSync {
             var isOwned = false;
             foreach (var owner in owners.get_elements()) {
                 if (owner.get_object().get_boolean_member("isAuthenticatedUser")) isOwned = true;
+
             }
+            // NOTE: skip files that isn't owned
             if (!isOwned && !notowned) return null;
 
             file.id = object.get_string_member("id");
@@ -167,6 +167,9 @@ namespace GDriveSync {
             var mimeType = object.get_string_member("mimeType");
             file.isFolder = mimeType == "application/vnd.google-apps.folder";
 
+            // NOTE: skip files with no content
+            if (!file.isFolder && file.downloadUrl == null) return null;
+            
             return file;
         }
 
