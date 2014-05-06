@@ -1,5 +1,3 @@
-using GDriveSync.AuthInfo;
-
 namespace GDriveSync {
 
     const string VERSION = "0.1.0";
@@ -44,7 +42,7 @@ namespace GDriveSync {
             if (output == null) {
                 output = "./gdrive";
             }
-            
+
             Auth.authenticate();
 
             var root = new DriveFile.as_root();

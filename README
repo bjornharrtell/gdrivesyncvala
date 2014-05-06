@@ -16,17 +16,19 @@ Application Options:
 ---
 
 Stuff that works:
-* Google OAuth2 authentication (stored with GConf)
+* Google OAuth2 authentication
 * Download Google Drive contents
 * Only download modified files
 * Only download owned filed (optional)
 * Configurable destination
-
-Stuff that is TODO:
 * Upload new files
 * Delete extraenous local files
 * Track local deletes
+* MD5 comparison
+
+Stuff that is TODO:
+
+* Remote deletes
 * Use resumeable download API
-* Run as daemon
 * Optional status reporting using GNOME 3 Message Tray
 

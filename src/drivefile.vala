@@ -13,7 +13,7 @@ namespace GDriveSync {
         static LocalMeta localMeta = new LocalMeta();
 
         static Soup.Session session = new Soup.Session();
-        
+
         DriveFile() {
         }
 
@@ -306,16 +306,22 @@ namespace GDriveSync {
 
         public void update() {
             message("Uploading update " + path);
+
+            // TODO: implement update op
         }
 
         public void deleteRemote() {
             message("Deleting " + path);
+
+            // TODO: implement the actual delete op
 
             localMeta.remove(path);
         }
 
         public void createRemoteDir() {
             message("Create remote dir " + path);
+
+            // TODO: implement create remote dir op
         }
     }
 

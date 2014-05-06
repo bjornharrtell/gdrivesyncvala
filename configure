@@ -11682,13 +11682,11 @@ if test -n "$GDRIVESYNC_CFLAGS"; then
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 \""; } >&5
   ($PKG_CONFIG --exists --print-errors "sqlite3
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
@@ -11697,7 +11695,6 @@ gtk+-3.0 ") 2>&5
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
@@ -11714,13 +11711,11 @@ if test -n "$GDRIVESYNC_LIBS"; then
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 \""; } >&5
   ($PKG_CONFIG --exists --print-errors "sqlite3
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
@@ -11729,7 +11724,6 @@ gtk+-3.0 ") 2>&5
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
@@ -11755,14 +11749,12 @@ fi
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 " 2>&1`
         else
 	        GDRIVESYNC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sqlite3
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
@@ -11772,7 +11764,6 @@ gtk+-3.0 " 2>&1`
 gee-0.8
 webkitgtk-3.0
 json-glib-1.0
-gconf-2.0
 gtk+-3.0 ) were not met:
 
 $GDRIVESYNC_PKG_ERRORS

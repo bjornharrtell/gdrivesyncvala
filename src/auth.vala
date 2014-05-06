@@ -1,8 +1,6 @@
 using Gtk;
 using WebKit;
 
-using GDriveSync;
-
 namespace GDriveSync.Auth {
 
     void doFullAuth() {
@@ -51,8 +49,9 @@ namespace GDriveSync.Auth {
      **/
     public void authenticate() {
         message("Attempting authentication using Google OAuth2");
+
         if (!AuthInfo.hasValidAccessToken()) {
-            GConf.read();
+            AuthInfo.read();
             if (!AuthInfo.hasValidAccessToken()) {
                 if (AuthInfo.refresh_token != null) {
                     refreshToken();
@@ -61,6 +60,7 @@ namespace GDriveSync.Auth {
                 }
             }
         }
+    
     }
 
     Json.Object request(string params) {
@@ -95,7 +95,7 @@ namespace GDriveSync.Auth {
         AuthInfo.refresh_token = object.get_string_member("refresh_token");
         AuthInfo.issued = new DateTime.now_local().to_unix();
 
-        GConf.persist();
+        AuthInfo.persist();
     }
 
     void refreshToken() {
@@ -112,7 +112,6 @@ namespace GDriveSync.Auth {
         AuthInfo.expires_in = object.get_int_member("expires_in");
         AuthInfo.issued = new DateTime.now_local().to_unix();
 
-        GConf.persist();
+        AuthInfo.persist();
     }
-
 }

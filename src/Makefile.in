@@ -81,7 +81,7 @@ host_triplet = @host@
 bin_PROGRAMS = gdrivesync$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am gdrivesync.c \
-	auth.c authinfo.c gconf.c localmeta.c file.c drivefile.c \
+	auth.c authinfo.c localmeta.c file.c drivefile.c \
 	$(top_srcdir)/depcomp $(srcdir)/gdrivesync_vala.stamp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -94,8 +94,8 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_gdrivesync_OBJECTS = gdrivesync.$(OBJEXT) auth.$(OBJEXT) \
-	authinfo.$(OBJEXT) gconf.$(OBJEXT) localmeta.$(OBJEXT) \
-	file.$(OBJEXT) drivefile.$(OBJEXT)
+	authinfo.$(OBJEXT) localmeta.$(OBJEXT) file.$(OBJEXT) \
+	drivefile.$(OBJEXT)
 gdrivesync_OBJECTS = $(am_gdrivesync_OBJECTS)
 am__DEPENDENCIES_1 =
 gdrivesync_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -303,10 +303,10 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = -Os -s
 gdrivesync_SOURCES = \
-	gdrivesync.vala config.vapi auth.vala authinfo.vala gconf.vala localmeta.vala file.vala drivefile.vala
+	gdrivesync.vala config.vapi auth.vala authinfo.vala localmeta.vala file.vala drivefile.vala
 
 gdrivesync_VALAFLAGS = \
-	--pkg gtk+-3.0 --pkg webkitgtk-3.0 --pkg json-glib-1.0 --pkg gee-0.8 --pkg gconf-2.0 --pkg sqlite3
+	--pkg gtk+-3.0 --pkg webkitgtk-3.0 --pkg json-glib-1.0 --pkg gee-0.8 --pkg sqlite3
 
 gdrivesync_LDFLAGS = \
 	-Wl,--export-dynamic
@@ -410,7 +410,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/authinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drivefile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdrivesync.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/localmeta.Po@am__quote@
 
@@ -449,11 +448,6 @@ $(srcdir)/authinfo.c: $(srcdir)/gdrivesync_vala.stamp
 	@if test -f $@; then :; else \
 	  $(MAKE) $(AM_MAKEFLAGS) $(srcdir)/gdrivesync_vala.stamp; \
 	fi
-$(srcdir)/gconf.c: $(srcdir)/gdrivesync_vala.stamp
-	@if test -f $@; then :; else rm -f $(srcdir)/gdrivesync_vala.stamp; fi
-	@if test -f $@; then :; else \
-	  $(MAKE) $(AM_MAKEFLAGS) $(srcdir)/gdrivesync_vala.stamp; \
-	fi
 $(srcdir)/localmeta.c: $(srcdir)/gdrivesync_vala.stamp
 	@if test -f $@; then :; else rm -f $(srcdir)/gdrivesync_vala.stamp; fi
 	@if test -f $@; then :; else \
@@ -469,9 +463,9 @@ $(srcdir)/drivefile.c: $(srcdir)/gdrivesync_vala.stamp
 	@if test -f $@; then :; else \
 	  $(MAKE) $(AM_MAKEFLAGS) $(srcdir)/gdrivesync_vala.stamp; \
 	fi
-$(srcdir)/gdrivesync_vala.stamp: gdrivesync.vala config.vapi auth.vala authinfo.vala gconf.vala localmeta.vala file.vala drivefile.vala
+$(srcdir)/gdrivesync_vala.stamp: gdrivesync.vala config.vapi auth.vala authinfo.vala localmeta.vala file.vala drivefile.vala
 	$(AM_V_at)rm -f $@ && echo stamp > $@-t
-	$(AM_V_VALAC)$(am__cd) $(srcdir) && $(VALAC) $(gdrivesync_VALAFLAGS) $(VALAFLAGS) -C gdrivesync.vala config.vapi auth.vala authinfo.vala gconf.vala localmeta.vala file.vala drivefile.vala
+	$(AM_V_VALAC)$(am__cd) $(srcdir) && $(VALAC) $(gdrivesync_VALAFLAGS) $(VALAFLAGS) -C gdrivesync.vala config.vapi auth.vala authinfo.vala localmeta.vala file.vala drivefile.vala
 	$(AM_V_at)mv -f $@-t $@
 
 mostlyclean-libtool:
@@ -603,7 +597,6 @@ maintainer-clean-generic:
 	-rm -f $(srcdir)/authinfo.c
 	-rm -f $(srcdir)/drivefile.c
 	-rm -f $(srcdir)/file.c
-	-rm -f $(srcdir)/gconf.c
 	-rm -f $(srcdir)/gdrivesync.c
 	-rm -f $(srcdir)/gdrivesync_vala.stamp
 	-rm -f $(srcdir)/localmeta.c
@@ -611,7 +604,6 @@ maintainer-clean-generic:
 	-rm -f authinfo.c
 	-rm -f drivefile.c
 	-rm -f file.c
-	-rm -f gconf.c
 	-rm -f gdrivesync.c
 	-rm -f localmeta.c
 clean: clean-am
