@@ -21,7 +21,7 @@ namespace GDriveSync {
         }
 
         void check(int err) {
-            if (err!= Sqlite.OK) {
+            if (err != Sqlite.OK) {
                 critical("Sqlite error: %s", db.errmsg());
             }
         }
@@ -31,12 +31,15 @@ namespace GDriveSync {
 		        CREATE TABLE localmeta (
 			        path    TEXT	PRIMARY KEY		NOT NULL
 		        );
-                CREATE TABLE settings (
-			        key     TEXT	PRIMARY KEY		NOT NULL
-                    value   TEXT	PRIMARY KEY		NOT NULL
-		        );
 		    """;
 	        db.exec(query, null, out errmsg);
+            query = """
+                CREATE TABLE settings (
+			        key     TEXT	PRIMARY KEY		NOT NULL,
+                    value   TEXT	                NOT NULL
+		        );
+		    """;
+            db.exec(query, null, out errmsg);
         }
 
         public void insert(string path) {
@@ -58,21 +61,17 @@ namespace GDriveSync {
         }
 
         public string? get(string key) {
-            return null;
             string query = @"SELECT value FROM settings WHERE key = '$(key)'";
             Sqlite.Statement stmt;
 	        check(db.prepare_v2 (query, query.length, out stmt));
             if (stmt.step() == Sqlite.ROW) {
-                string? val = null;
-                stmt.bind_text(1, val);
-                return val;
+                return stmt.column_text(0);
             } else {
                 return null;
             }
         }
 
         public void set(string key, string? value) {
-            return;
             string query = @"INSERT INTO settings (key, value) VALUES ('$(key)', '$(value)')";
 	        check(db.exec(query, null, out errmsg));
         }

@@ -8,6 +8,7 @@ namespace GDriveSync {
         public long modifiedDate { get; set; }
         public string MD5 { get; set; }
 
+        DriveFile parent;
         public HashMap<string, DriveFile> children = new HashMap<string, DriveFile>();
 
         static LocalMeta localMeta = new LocalMeta();
@@ -182,9 +183,11 @@ namespace GDriveSync {
                 var file = parseItem(node);
                 if (file != null) {
                     file.path = folder.path + file.title;
+                    file.parent = folder;
                     if (folder.children.has_key(file.title)) {
                         var existing = folder.children.get(file.title);
                         existing.id = file.id;
+                        existing.parent = folder;
                         existing.remoteExists = file.remoteExists;
                         existing.modifiedDate = file.modifiedDate;
                         existing.MD5 = file.MD5;
@@ -242,13 +245,19 @@ namespace GDriveSync {
             localMeta.insert(path);
         }
 
-        string generateMetaData() {
+        string generateMetaData(bool folder = false) {
             var generator = new Json.Generator();
             var root = new Json.Node(Json.NodeType.OBJECT);
             var object = new Json.Object();
             root.set_object(object);
             generator.set_root(root);
             object.set_string_member("title", title);
+            if (folder) object.set_string_member("mimeType", "application/vnd.google-apps.folder");
+            var parents = new Json.Array();
+            var parentObject = new Json.Object();
+            parentObject.set_string_member("id", parent.id);
+            parents.add_object_element(parentObject);
+            object.set_array_member("parents", parents);
             var json = generator.to_data(null);
             return json;
         }
@@ -307,13 +316,55 @@ namespace GDriveSync {
         public void update() {
             message("Uploading update " + path);
 
-            // TODO: implement update op
+            var url = @"https://www.googleapis.com/upload/drive/v2/files/$(id)?uploadType=resumable";
+
+            Soup.Session session = new Soup.Session();
+            var msg = request("PUT", url);
+
+            var mimeType = guessMimeType();
+            
+            msg.request_headers.append("X-Upload-Content-Type", mimeType);
+            msg.request_headers.append("X-Upload-Content-Length", localFileSize.to_string());
+            msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
+
+            msg.request_body.append(Soup.MemoryUse.COPY, generateMetaData().data);
+            session.send_message(msg);
+
+            message("sending message");
+            session.send_message(msg);
+
+            var location = msg.response_headers.get("Location");
+
+            msg = request("PUT", location);
+            msg.request_headers.append("Authorization", @"Bearer $(AuthInfo.access_token)");
+            msg.request_headers.append("Content-Type", mimeType);
+
+            var file = getLocalFile();
+            var stream = file.read();
+	        uint8 fbuf[1024];
+	        size_t size;
+
+	        while ((size = stream.read (fbuf)) > 0) {
+                msg.request_body.append(Soup.MemoryUse.COPY, fbuf);
+	        }
+            msg.request_body.flatten();
+            msg.request_headers.append("Content-Length", localFileSize.to_string());
+            session.send_message(msg);
+            var data = (string) msg.response_body.flatten().data;
+            message(data);
         }
 
         public void deleteRemote() {
             message("Deleting " + path);
 
-            // TODO: implement the actual delete op
+            var url = @"https://www.googleapis.com/drive/v2/files/$(id)";
+
+            Soup.Session session = new Soup.Session();
+            var msg = request("DELETE", url);
+            session.send_message(msg);
+
+            var data = (string) msg.response_body.flatten().data;
+            message(data);
 
             localMeta.remove(path);
         }
@@ -321,7 +372,20 @@ namespace GDriveSync {
         public void createRemoteDir() {
             message("Create remote dir " + path);
 
-            // TODO: implement create remote dir op
+            var url = "https://www.googleapis.com/drive/v2/files";
+
+            Soup.Session session = new Soup.Session();
+            var msg = request("POST", url);
+
+            //msg.request_headers.append("X-Upload-Content-Type", mimeType);
+            //msg.request_headers.append("X-Upload-Content-Length", localFileSize.to_string());
+            msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
+
+            msg.request_body.append(Soup.MemoryUse.COPY, generateMetaData(true).data);
+            session.send_message(msg);
+
+            var data = (string) msg.response_body.flatten().data;
+            message(data);
         }
     }
 
