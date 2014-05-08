@@ -72,8 +72,15 @@ namespace GDriveSync {
         }
 
         public void set(string key, string? value) {
-            string query = @"INSERT INTO settings (key, value) VALUES ('$(key)', '$(value)')";
-	        check(db.exec(query, null, out errmsg));
+            if (get(key) == null) {
+                string query = @"INSERT INTO settings (key, value) VALUES ('$(key)', '$(value)')";
+	            check(db.exec(query, null, out errmsg));
+            } else {
+                string query = @"UPDATE settings SET value = '$(value)' WHERE key = '$(key)'";
+	            check(db.exec(query, null, out errmsg));
+            }
+            
+            
         }
     }
 

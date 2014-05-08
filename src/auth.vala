@@ -26,7 +26,7 @@ namespace GDriveSync.Auth {
                 if (split.length == 2 && split[0] == "Success code") {
                     var code = split[1];
                     // TODO: find out why close is missing..?
-                    //window.close();
+                    window.destroy();
                     requestToken(code);
                 }
             }
