@@ -23,6 +23,7 @@ namespace GDriveSync {
         }
 
         public void delete() {
+           message("Deleting local file: " + path);
            getLocalFile().delete();
            // TODO: also remove persisted data
         }

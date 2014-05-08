@@ -54,6 +54,7 @@ namespace GDriveSync {
 
         public bool exists(string path) {
             string query = @"SELECT path FROM localmeta WHERE path = '$(path)'";
+            //message(query);
             Sqlite.Statement stmt;
 	        check(db.prepare_v2 (query, query.length, out stmt));
             var exists = stmt.step() == Sqlite.ROW;
@@ -79,8 +80,6 @@ namespace GDriveSync {
                 string query = @"UPDATE settings SET value = '$(value)' WHERE key = '$(key)'";
 	            check(db.exec(query, null, out errmsg));
             }
-            
-            
         }
     }
 

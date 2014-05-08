@@ -22,6 +22,7 @@ namespace GDriveSync {
             isRoot = true;
             isFolder = true;
             path = "";
+            createDir();
         }
 
         public static void sync(DriveFile root) {
@@ -32,20 +33,30 @@ namespace GDriveSync {
 
         static void doSync(DriveFile file) {
 
-            // TODO: need to rethink this logic.. to make it as small and sane as possible
-
             bool folderDeleted = false;
+
+            //message("doSync: " + file.path);
+            //message("wasSynced: " + file.wasSynced.to_string());
             
             if (file.isFolder) {
                 if (file.localExists) {
-                    if (!file.remoteExists) file.createRemoteDir();
+                    if (!file.remoteExists) {
+                        if (file.wasSynced) {
+                            file.delete();
+                        } else {
+                            file.createRemoteDir();
+                        }
+                    }
                 } else if (file.wasSynced) {
                     if (file.remoteExists) {
                         file.deleteRemote();
                         folderDeleted = true;
                     }
                 } else {
-                    if (file.remoteExists) file.createDir();
+                    if (file.remoteExists) {
+                        file.createDir();
+                        localMeta.insert(file.path);
+                    }
                 }
             } else {
                 if (file.remoteExists) {
@@ -86,7 +97,7 @@ namespace GDriveSync {
         }
 
         public static void fetchLocalMeta(DriveFile folder) {
-            folder.createDir();
+            message("Getting local metadata for folder: " + folder.path);
 
             var dir = Dir.open(folder.getAbsPath());
             string? name = null;
@@ -95,21 +106,23 @@ namespace GDriveSync {
 
                 var file = new DriveFile();
                 file.path = relativePath;
+                file.parent = folder;
                 file.title = name;
                 file.localExists = true;
-                file.wasSynced = localMeta.exists(file.path);
-
+                
                 FileInfo info = file.queryInfo();
                 var type = info.get_file_type();
                 file.localFileSize = info.get_size();
                 file.localModifiedDate = info.get_modification_time().tv_sec;
                 if (type == FileType.DIRECTORY) {
                     file.isFolder = true;
+                    file.path = file.path + "/";//Path.build_filename(relativePath, Path.DIR_SEPARATOR);
                     fetchLocalMeta(file);
                 } else if (type == FileType.REGULAR) {
                     file.isFolder = false;
                     file.localMD5 = file.calcLocalMD5();
                 }
+                file.wasSynced = localMeta.exists(file.path);
                 folder.children.set(name, file);
             }
         }
@@ -146,7 +159,6 @@ namespace GDriveSync {
             var isOwned = false;
             foreach (var owner in owners.get_elements()) {
                 if (owner.get_object().get_boolean_member("isAuthenticatedUser")) isOwned = true;
-
             }
             // NOTE: skip files that isn't owned
             if (!isOwned && !notowned) return null;
@@ -194,11 +206,13 @@ namespace GDriveSync {
                         existing.downloadUrl = file.downloadUrl;
                         file = existing;
                     } else {
+                        if (file.isFolder) {
+                            file.path = file.path + "/";
+                        }
                         file.wasSynced = localMeta.exists(file.path);
                         folder.children.set(file.title, file);
                     }
                     if (file.isFolder) {
-                        file.path = file.path + "/";
                         getItemsMeta(file);
                     }
                 }
@@ -268,7 +282,7 @@ namespace GDriveSync {
             var bytes = stream.read_bytes(1024*1024);
             var contentType = GLib.ContentType.guess(title, bytes.get_data(), null);
             var mimeType = GLib.ContentType.get_mime_type(contentType);
-            message("Guessed mime-type: " + mimeType);
+            //message("Guessed mime-type: " + mimeType);
             return mimeType;
         }
 
@@ -307,8 +321,9 @@ namespace GDriveSync {
             msg.request_body.flatten();
             msg.request_headers.append("Content-Length", localFileSize.to_string());
             session.send_message(msg);
-            var data = (string) msg.response_body.flatten().data;
-            message(data);
+
+            //var data = (string) msg.response_body.flatten().data;
+            //message(data);
 
             localMeta.insert(path);
         }
@@ -350,12 +365,13 @@ namespace GDriveSync {
             msg.request_body.flatten();
             msg.request_headers.append("Content-Length", localFileSize.to_string());
             session.send_message(msg);
-            var data = (string) msg.response_body.flatten().data;
-            message(data);
+
+            //var data = (string) msg.response_body.flatten().data;
+            //message(data);
         }
 
         public void deleteRemote() {
-            message("Deleting " + path);
+            message("Deleting remote " + path);
 
             var url = @"https://www.googleapis.com/drive/v2/files/$(id)";
 
@@ -363,8 +379,8 @@ namespace GDriveSync {
             var msg = request("DELETE", url);
             session.send_message(msg);
 
-            var data = (string) msg.response_body.flatten().data;
-            message(data);
+            //var data = (string) msg.response_body.flatten().data;
+            //message(data);
 
             localMeta.remove(path);
         }
@@ -381,11 +397,19 @@ namespace GDriveSync {
             //msg.request_headers.append("X-Upload-Content-Length", localFileSize.to_string());
             msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
 
-            msg.request_body.append(Soup.MemoryUse.COPY, generateMetaData(true).data);
+            var json = generateMetaData(true);
+
+            message(parent.path);
+            message(parent.getAbsPath ());
+            message(json);
+            
+            msg.request_body.append(Soup.MemoryUse.COPY, json.data);
             session.send_message(msg);
 
-            var data = (string) msg.response_body.flatten().data;
-            message(data);
+            //var data = (string) msg.response_body.flatten().data;
+            //message(data);
+
+            localMeta.insert(path);
         }
     }
 
