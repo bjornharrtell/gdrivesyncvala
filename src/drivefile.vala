@@ -293,9 +293,7 @@ namespace GDriveSync {
             msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
 
             msg.request_body.append(Soup.MemoryUse.COPY, generateMetaData().data);
-            session.send_message(msg);
-
-            message("sending message");
+            
             session.send_message(msg);
 
             var location = msg.response_headers.get("Location");
@@ -309,11 +307,11 @@ namespace GDriveSync {
 	        uint8 fbuf[1024];
 	        size_t size;
 
+            msg.request_headers.append("Content-Length", localFileSize.to_string());
 	        while ((size = stream.read (fbuf)) > 0) {
                 msg.request_body.append(Soup.MemoryUse.COPY, fbuf);
 	        }
-            msg.request_body.flatten();
-            msg.request_headers.append("Content-Length", localFileSize.to_string());
+            msg.request_body.complete();
             session.send_message(msg);
 
             //var data = (string) msg.response_body.flatten().data;
@@ -337,9 +335,7 @@ namespace GDriveSync {
             msg.request_headers.append("Content-Type", "application/json; charset=UTF-8");
 
             msg.request_body.append(Soup.MemoryUse.COPY, generateMetaData().data);
-            session.send_message(msg);
-
-            message("sending message");
+            
             session.send_message(msg);
 
             var location = msg.response_headers.get("Location");
@@ -353,11 +349,11 @@ namespace GDriveSync {
 	        uint8 fbuf[1024];
 	        size_t size;
 
+            msg.request_headers.append("Content-Length", localFileSize.to_string());
 	        while ((size = stream.read (fbuf)) > 0) {
                 msg.request_body.append(Soup.MemoryUse.COPY, fbuf);
 	        }
-            msg.request_body.flatten();
-            msg.request_headers.append("Content-Length", localFileSize.to_string());
+            msg.request_body.complete();
             session.send_message(msg);
 
             //var data = (string) msg.response_body.flatten().data;
