@@ -49,7 +49,7 @@ namespace GDriveSync {
                 } else {
                     if (file.remoteExists) {
                         file.createDir();
-                        localMeta.insert(file.path);
+                        GDriveSync.localMeta.insert(file.path);
                     }
                 }
             } else {
@@ -116,7 +116,7 @@ namespace GDriveSync {
                     file.isFolder = false;
                     file.localMD5 = file.calcLocalMD5();
                 }
-                file.wasSynced = localMeta.exists(file.path);
+                file.wasSynced = GDriveSync.localMeta.exists(file.path);
                 folder.children.set(name, file);
             }
         }
@@ -203,7 +203,7 @@ namespace GDriveSync {
                         if (file.isFolder) {
                             file.path = file.path + "/";
                         }
-                        file.wasSynced = localMeta.exists(file.path);
+                        file.wasSynced = GDriveSync.localMeta.exists(file.path);
                         folder.children.set(file.title, file);
                     }
                     if (file.isFolder) {
@@ -250,7 +250,7 @@ namespace GDriveSync {
                 critical(e.message);
             }
 
-            localMeta.insert(path);
+            GDriveSync.localMeta.insert(path);
         }
 
         string generateMetaData(bool folder = false) {
@@ -319,7 +319,7 @@ namespace GDriveSync {
             //var data = (string) msg.response_body.flatten().data;
             //message(data);
 
-            localMeta.insert(path);
+            GDriveSync.localMeta.insert(path);
         }
 
         public void update() {
@@ -376,7 +376,7 @@ namespace GDriveSync {
             //var data = (string) msg.response_body.flatten().data;
             //message(data);
 
-            localMeta.remove(path);
+            GDriveSync.localMeta.remove(path);
         }
 
         public void createRemoteDir() {
@@ -403,7 +403,7 @@ namespace GDriveSync {
             //var data = (string) msg.response_body.flatten().data;
             //message(data);
 
-            localMeta.insert(path);
+            GDriveSync.localMeta.insert(path);
         }
     }
 

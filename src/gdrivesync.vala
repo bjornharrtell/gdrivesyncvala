@@ -10,6 +10,8 @@ namespace GDriveSync {
     string? output = null;
     //bool notowned = false;
     //bool exportdocs = false;
+
+    
     
     class GDriveSync : GLib.Object {
 
@@ -20,6 +22,8 @@ namespace GDriveSync {
 		    //{ "exportdocs", 0, 0, OptionArg.NONE, ref exportdocs, "Export Google Documents as PDF", null },
 		    { null }
 	    };
+
+        public static LocalMeta localMeta = new LocalMeta();
 
         public static int main(string[] args) {
 
@@ -50,7 +54,8 @@ namespace GDriveSync {
             if (root.getLocalFile().query_exists()) {
                 DriveFile.sync(root);
             } else {
-                error("Output folder " + root.getAbsPath() + " does not exists, aborting.");
+                error("Output folder " + root.getAbsPath() + " does not exists, aborting and clearing local meta.");
+                localMeta.clear();
             }
 
             return 0;

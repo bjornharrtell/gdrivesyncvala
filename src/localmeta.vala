@@ -52,6 +52,11 @@ namespace GDriveSync {
 	        check(db.exec(query, null, out errmsg));
         }
 
+        public void clear() {
+            string query = "DELETE FROM localmeta";
+	        check(db.exec(query, null, out errmsg));
+        }
+
         public bool exists(string path) {
             string query = @"SELECT path FROM localmeta WHERE path = '$(path)'";
             //message(query);

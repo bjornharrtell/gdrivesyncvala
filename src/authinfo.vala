@@ -17,16 +17,15 @@ namespace GDriveSync.AuthInfo {
     }
 
     void read() {
-        LocalMeta localMeta = new LocalMeta();
-        access_token = localMeta.get(access_token_key);
-        refresh_token = localMeta.get(refresh_token_key);
-        var expires_in_string = localMeta.get(expires_in_key);
+        access_token = GDriveSync.localMeta.get(access_token_key);
+        refresh_token = GDriveSync.localMeta.get(refresh_token_key);
+        var expires_in_string = GDriveSync.localMeta.get(expires_in_key);
         if (expires_in_string != null) {
             expires_in = int64.parse(expires_in_string);
         } else {
             expires_in = null;
         }
-        var issued_string = localMeta.get(issued_key);
+        var issued_string = GDriveSync.localMeta.get(issued_key);
         if (issued_string != null) {
             issued = int64.parse(issued_string);
         } else {
@@ -35,11 +34,10 @@ namespace GDriveSync.AuthInfo {
     }
 
     void persist() {
-        LocalMeta localMeta = new LocalMeta();
-        localMeta.set(access_token_key, access_token);
-        localMeta.set(refresh_token_key, refresh_token); 
-        localMeta.set(expires_in_key, expires_in.to_string());
-        localMeta.set(issued_key, issued.to_string());
+        GDriveSync.localMeta.set(access_token_key, access_token);
+        GDriveSync.localMeta.set(refresh_token_key, refresh_token); 
+        GDriveSync.localMeta.set(expires_in_key, expires_in.to_string());
+        GDriveSync.localMeta.set(issued_key, issued.to_string());
     }
 
 }
