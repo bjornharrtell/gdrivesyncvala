@@ -8,15 +8,15 @@ namespace GDriveSync {
     
     bool version = false;
     string? output = null;
-    bool notowned = false;
-    bool exportdocs = false;
+    //bool notowned = false;
+    //bool exportdocs = false;
     
     class GDriveSync : GLib.Object {
 
         const OptionEntry[] options = {
 		    { "version", 0, 0, OptionArg.NONE, ref version, "Display version number", null },
 		    { "output", 'o', 0, OptionArg.FILENAME, ref output, "Output path", "DIRECTORY" },
-            { "notowned", 0, 0, OptionArg.NONE, ref exportdocs, "Include files you do not own", null },
+            //{ "notowned", 0, 0, OptionArg.NONE, ref exportdocs, "Include files you do not own", null },
 		    //{ "exportdocs", 0, 0, OptionArg.NONE, ref exportdocs, "Export Google Documents as PDF", null },
 		    { null }
 	    };
@@ -44,9 +44,14 @@ namespace GDriveSync {
             }
 
             Auth.authenticate();
-
+            
             var root = new DriveFile.as_root();
-            DriveFile.sync(root);
+
+            if (root.getLocalFile().query_exists()) {
+                DriveFile.sync(root);
+            } else {
+                error("Output folder " + root.getAbsPath() + " does not exists, aborting.");
+            }
 
             return 0;
         } 

@@ -11,8 +11,6 @@ namespace GDriveSync {
         DriveFile parent;
         public HashMap<string, DriveFile> children = new HashMap<string, DriveFile>();
 
-        static LocalMeta localMeta = new LocalMeta();
-
         static Soup.Session session = new Soup.Session();
 
         DriveFile() {
@@ -22,7 +20,6 @@ namespace GDriveSync {
             isRoot = true;
             isFolder = true;
             path = "";
-            createDir();
         }
 
         public static void sync(DriveFile root) {
@@ -34,9 +31,6 @@ namespace GDriveSync {
         static void doSync(DriveFile file) {
 
             bool folderDeleted = false;
-
-            //message("doSync: " + file.path);
-            //message("wasSynced: " + file.wasSynced.to_string());
             
             if (file.isFolder) {
                 if (file.localExists) {
@@ -161,7 +155,7 @@ namespace GDriveSync {
                 if (owner.get_object().get_boolean_member("isAuthenticatedUser")) isOwned = true;
             }
             // NOTE: skip files that isn't owned
-            if (!isOwned && !notowned) return null;
+            if (!isOwned/* && !notowned*/) return null;
 
             file.id = object.get_string_member("id");
             file.remoteExists = true;

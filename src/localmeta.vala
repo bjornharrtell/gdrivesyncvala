@@ -4,7 +4,7 @@ using Sqlite;
 
 namespace GDriveSync {
 
-    class LocalMeta {
+    public class LocalMeta {
         string path = Path.build_filename(Environment.get_home_dir(), CONFIGFOLDER, LOCALMETADB);
         
         Database db;

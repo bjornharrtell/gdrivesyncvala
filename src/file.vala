@@ -15,6 +15,8 @@ namespace GDriveSync {
         public int64 localFileSize { get; set; }
         public long localModifiedDate { get; set; }
         public string localMD5 { get; set; }
+
+        protected static LocalMeta localMeta = new LocalMeta();
                 
         public void createDir() {
             if (isFolder) {
@@ -25,7 +27,7 @@ namespace GDriveSync {
         public void delete() {
            message("Deleting local file: " + path);
            getLocalFile().delete();
-           // TODO: also remove persisted data
+           localMeta.remove(path);
         }
         
         public string getAbsPath() {
