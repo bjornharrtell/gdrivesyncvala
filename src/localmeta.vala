@@ -11,6 +11,7 @@ namespace GDriveSync {
         string errmsg;
 
         public LocalMeta() {
+            message("Opening local metadata database");
             var rc = Database.open(path, out db);
 
             if (rc != Sqlite.OK) {

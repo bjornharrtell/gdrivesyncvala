@@ -11,8 +11,6 @@ namespace GDriveSync {
     //bool notowned = false;
     //bool exportdocs = false;
 
-    
-    
     class GDriveSync : GLib.Object {
 
         const OptionEntry[] options = {
@@ -23,7 +21,7 @@ namespace GDriveSync {
 		    { null }
 	    };
 
-        public static LocalMeta localMeta = new LocalMeta();
+        public static LocalMeta localMeta;
 
         public static int main(string[] args) {
 
@@ -47,6 +45,8 @@ namespace GDriveSync {
                 output = "./gdrive";
             }
 
+            localMeta = new LocalMeta();
+
             Auth.authenticate();
             
             var root = new DriveFile.as_root();
@@ -54,7 +54,7 @@ namespace GDriveSync {
             if (root.getLocalFile().query_exists()) {
                 DriveFile.sync(root);
             } else {
-                error("Output folder " + root.getAbsPath() + " does not exists, aborting and clearing local meta.");
+                message("Output folder " + root.getAbsPath() + " does not exists, aborting and clearing local meta.");
                 localMeta.clear();
             }
 
